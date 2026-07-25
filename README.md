@@ -74,9 +74,27 @@ Agents declare permitted `write_kinds` and scope `namespace` labels. Writes are 
 
 ## Demo
 
+Simulated in-process workflow (no LLM):
+
 ```bash
 PYTHONPATH=src python examples/multi_agent_demo.py
 ```
+
+**Real multi-agent demo** with Docker + local Ollama LLM (researcher + planner, GPU when available):
+
+```bash
+docker context use default   # required — Desktop context has no GPU
+cd docker && docker compose up --build
+```
+
+**Host CPU fallback:**
+
+```bash
+ollama pull llama3.2:1b
+OLLAMA_HOST=http://127.0.0.1:11434 PYTHONPATH=src python examples/llm_multi_agent_demo.py
+```
+
+See [`docker/README.md`](docker/README.md) for GPU setup, model options, and troubleshooting.
 
 ## Tests
 
@@ -91,6 +109,16 @@ Closest prior art is [MemClaw](https://github.com/caura-ai/caura-memclaw) — th
 ## Examples
 
 See [`examples/multi_agent_demo.py`](examples/multi_agent_demo.py) for a multi-agent scenario with scope isolation, supersession, and audit trails.
+
+See [`examples/llm_multi_agent_demo.py`](examples/llm_multi_agent_demo.py) for the same scenario with real Ollama LLM agents (Docker or host).
+
+**Idea validation** — comparative proof that governance prevents four failure modes ():
+
+```bash
+python examples/prove_the_idea.py   # exits 0 when all four modes proven
+```
+
+Report: [`examples/prove_the_idea.md`](examples/prove_the_idea.md)
 
 ## Design
 
