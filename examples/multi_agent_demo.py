@@ -49,7 +49,9 @@ def main() -> None:
     for entry in context:
         print(f"  - {entry.key}: {entry.value!r} [{entry.authority.value}]")
 
-    conflicts = store.check_conflict("user_location", "Paris", agent_id="researcher")
+    conflicts = store.check_conflict(
+        "user_location", "Paris", agent_id="researcher", scope=read_scope
+    )
     if conflicts:
         print(f"Conflict detected for user_location vs Paris: {conflicts[0].value!r}")
 
@@ -62,7 +64,7 @@ def main() -> None:
     )
     print(f"Superseded location -> {updated.value!r}")
 
-    log = store.audit_log("user_location", agent_id="researcher")
+    log = store.audit_log("user_location", agent_id="researcher", scope=read_scope)
     print(f"Audit log ({len(log)} entries):")
     for entry in log:
         print(

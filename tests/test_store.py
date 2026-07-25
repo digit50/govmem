@@ -229,7 +229,7 @@ class TestConflictDetection:
             kind="fact",
         )
         conflicts = registered_store.check_conflict(
-            "user_location", "Paris", agent_id="researcher"
+            "user_location", "Paris", agent_id="researcher", scope=scope
         )
         assert len(conflicts) == 1
         assert conflicts[0].value == "Berlin"
@@ -248,7 +248,7 @@ class TestConflictDetection:
             kind="fact",
         )
         assert registered_store.check_conflict(
-            "user_location", "Berlin", agent_id="researcher"
+            "user_location", "Berlin", agent_id="researcher", scope=scope
         ) == []
 
     def test_superseded_entries_not_conflicts(
@@ -272,7 +272,7 @@ class TestConflictDetection:
             evidence="turn 50",
         )
         conflicts = registered_store.check_conflict(
-            "user_location", "Paris", agent_id="researcher"
+            "user_location", "Paris", agent_id="researcher", scope=scope
         )
         assert len(conflicts) == 1
         assert conflicts[0].value == "Hamburg"
@@ -298,8 +298,11 @@ class TestSupersession:
             reason="user moved",
             evidence="turn 50: 'I just moved'",
         )
-        assert original.state.value == "superseded"
-        assert original.superseded_by == successor.id
+        log = registered_store.audit_log(
+            "user_location", agent_id="researcher", scope=scope
+        )
+        assert log[0].state.value == "superseded"
+        assert log[0].superseded_by == successor.id
         assert successor.value == "Hamburg"
         assert successor.state.value == "active"
 
@@ -361,7 +364,9 @@ class TestAuditLog:
             reason="moved again",
             evidence="turn 60",
         )
-        log = registered_store.audit_log("user_location", agent_id="researcher")
+        log = registered_store.audit_log(
+            "user_location", agent_id="researcher", scope=scope
+        )
         assert [entry.id for entry in log] == [first.id, second.id, third.id]
         assert all(entry.key == "user_location" for entry in log)
 
@@ -492,8 +497,9 @@ class TestMutability:
             provenance_source="turn 2",
             kind="fact",
         )
-        assert first.state.value == "superseded"
-        assert first.superseded_by == second.id
+        log = registered_store.audit_log("note", agent_id="researcher", scope=scope)
+        assert log[0].state.value == "superseded"
+        assert log[0].superseded_by == second.id
         assert second.value == "v2"
 
     def test_decaying_entry_can_be_superseded(
@@ -557,3 +563,142 @@ class TestThreadSafety:
 
         assert errors == []
         assert len(store.read(agent_id="worker", scope=Scope())) == 50
+
+
+class TestGovernanceBlockers:
+    """Tests for review-panel blocker fixes."""
+
+    def test_returned_entry_mutation_does_not_affect_store(
+        self, registered_store: GovernedMemoryStore
+    ) -> None:
+        scope = Scope(user="user_123", namespace="research")
+        entry = registered_store.write(
+            agent_id="researcher",
+            key="fact",
+            value="original",
+            scope=scope,
+            authority="user_stated",
+            provenance_source="turn 1",
+            kind="fact",
+        )
+        with pytest.raises(Exception):
+            entry.value = "mutated"  # frozen dataclass
+        entries = registered_store.read(
+            agent_id="planner", scope=Scope(user="user_123")
+        )
+        assert entries[0].value == "original"
+
+    def test_locked_session_entry_not_bypassed_by_write_without_session(
+        self, registered_store: GovernedMemoryStore
+    ) -> None:
+        registered_store.write(
+            agent_id="researcher",
+            key="secret",
+            value="private",
+            scope=Scope(
+                user="user_123",
+                task="travel",
+                session="private_sess",
+                namespace="research",
+            ),
+            authority="user_stated",
+            provenance_source="turn 1",
+            mutability="locked",
+            kind="fact",
+        )
+        with pytest.raises(LockedEntryError):
+            registered_store.write(
+                agent_id="researcher",
+                key="secret",
+                value="hacked",
+                scope=Scope(user="user_123", task="travel", namespace="research"),
+                authority="user_stated",
+                provenance_source="turn 2",
+                kind="fact",
+            )
+
+    def test_check_conflict_scope_filters_cross_user(
+        self, registered_store: GovernedMemoryStore
+    ) -> None:
+        registered_store.write(
+            agent_id="researcher",
+            key="budget",
+            value="5000",
+            scope=Scope(user="alice", task="travel", namespace="research"),
+            authority="user_stated",
+            provenance_source="t1",
+            kind="fact",
+        )
+        registered_store.write(
+            agent_id="researcher",
+            key="budget",
+            value="2000",
+            scope=Scope(user="bob", task="travel", namespace="research"),
+            authority="user_stated",
+            provenance_source="t2",
+            kind="fact",
+        )
+        alice_conflicts = registered_store.check_conflict(
+            "budget",
+            "5000",
+            agent_id="researcher",
+            scope=Scope(user="alice", task="travel"),
+        )
+        assert alice_conflicts == []
+        bob_conflicts = registered_store.check_conflict(
+            "budget",
+            "5000",
+            agent_id="researcher",
+            scope=Scope(user="bob", task="travel"),
+        )
+        assert len(bob_conflicts) == 1
+        assert bob_conflicts[0].value == "2000"
+
+    def test_audit_log_scope_filters_cross_user(
+        self, registered_store: GovernedMemoryStore
+    ) -> None:
+        registered_store.write(
+            agent_id="researcher",
+            key="note",
+            value="alice-only",
+            scope=Scope(user="alice", namespace="research"),
+            authority="user_stated",
+            provenance_source="t1",
+            kind="fact",
+        )
+        registered_store.write(
+            agent_id="researcher",
+            key="note",
+            value="bob-only",
+            scope=Scope(user="bob", namespace="research"),
+            authority="user_stated",
+            provenance_source="t2",
+            kind="fact",
+        )
+        alice_log = registered_store.audit_log(
+            "note", agent_id="researcher", scope=Scope(user="alice")
+        )
+        assert len(alice_log) == 1
+        assert alice_log[0].value == "alice-only"
+
+    def test_supersede_enforces_write_kinds(
+        self, registered_store: GovernedMemoryStore
+    ) -> None:
+        scope = Scope(user="user_123", namespace="planning")
+        entry = registered_store.write(
+            agent_id="planner",
+            key="plan",
+            value="step 1",
+            scope=scope,
+            authority="agent_inferred",
+            provenance_source="t1",
+            kind="plan",
+        )
+        with pytest.raises(UnauthorizedWriteError):
+            registered_store.supersede(
+                entry_id=entry.id,
+                new_value="hacked",
+                agent_id="researcher",
+                reason="override",
+                evidence="t2",
+            )

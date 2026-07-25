@@ -73,7 +73,7 @@ class Provenance:
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class Entry:
     """A governed memory entry with full envelope metadata."""
 
@@ -84,6 +84,7 @@ class Entry:
     authority: Authority
     mutability: Mutability
     provenance: Provenance
+    kind: str | None = None
     superseded_by: str | None = None
     state: EntryState = EntryState.ACTIVE
 
@@ -97,6 +98,7 @@ class Entry:
         authority: Authority | str,
         mutability: Mutability | str,
         provenance: Provenance,
+        kind: str | None = None,
     ) -> Entry:
         return cls(
             id=str(uuid4()),
@@ -106,4 +108,5 @@ class Entry:
             authority=Authority(authority),
             mutability=Mutability(mutability),
             provenance=provenance,
+            kind=kind,
         )

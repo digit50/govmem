@@ -235,7 +235,9 @@ class TestProvenanceAndAudit:
             reason="correction",
             evidence="turn 2: updated",
         )
-        log = multi_agent_store.audit_log("fact", agent_id="researcher")
+        log = multi_agent_store.audit_log(
+            "fact", agent_id="researcher", scope=scope
+        )
         assert len(log) == 2
         assert log[0].provenance.agent_id == "researcher"
         assert "turn 1" in log[0].provenance.evidence_spans[0]
@@ -284,10 +286,21 @@ class TestContradictions:
             kind="fact",
         )
         conflicts = multi_agent_store.check_conflict(
-            "temperature", "20C", agent_id="researcher"
+            "temperature",
+            "20C",
+            agent_id="researcher",
+            scope=Scope(user="u2", task="weather"),
         )
         assert len(conflicts) == 1
         assert conflicts[0].value == "25C"
+
+        isolated = multi_agent_store.check_conflict(
+            "temperature",
+            "20C",
+            agent_id="researcher",
+            scope=Scope(user="u1", task="weather"),
+        )
+        assert isolated == []
 
     def test_no_conflict_when_all_active_match_proposed_value(
         self, multi_agent_store: GovernedMemoryStore
@@ -313,7 +326,16 @@ class TestContradictions:
             kind="fact",
         )
         assert multi_agent_store.check_conflict(
-            "status", "ok", agent_id="researcher"
+            "status",
+            "ok",
+            agent_id="researcher",
+            scope=Scope(user="u1"),
+        ) == []
+        assert multi_agent_store.check_conflict(
+            "status",
+            "ok",
+            agent_id="researcher",
+            scope=Scope(user="u2"),
         ) == []
 
 
@@ -455,7 +477,9 @@ class TestAdversarial:
         )
         counter_entries = [e for e in active if e.key == "counter"]
         assert len(counter_entries) == 1
-        log = multi_agent_store.audit_log("counter", agent_id="researcher")
+        log = multi_agent_store.audit_log(
+            "counter", agent_id="researcher", scope=scope
+        )
         assert len(log) == 20
         assert log[-1].state.value == "active"
         assert all(e.state.value == "superseded" for e in log[:-1])

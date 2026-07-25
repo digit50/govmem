@@ -87,6 +87,7 @@ class GovernedMemoryStore:
                     authority=authority,
                     mutability=mutability,
                     scope=scope,
+                    kind=kind,
                 )
 
             entry = Entry.create(
@@ -100,6 +101,7 @@ class GovernedMemoryStore:
                     provenance_source=provenance_source,
                     source_turn=source_turn,
                 ),
+                kind=kind,
             )
             self._backend.save(entry)
             return entry
@@ -123,12 +125,21 @@ class GovernedMemoryStore:
             results.sort(key=lambda entry: entry.provenance.written_at)
             return results
 
-    def check_conflict(self, key: str, value: Any, *, agent_id: str) -> list[Entry]:
+    def check_conflict(
+        self,
+        key: str,
+        value: Any,
+        *,
+        agent_id: str,
+        scope: Scope | None = None,
+    ) -> list[Entry]:
         with self._lock:
             self._require_registered(agent_id)
             conflicts: list[Entry] = []
             for entry in self._backend.get_by_key(key):
                 if entry.state != EntryState.ACTIVE:
+                    continue
+                if scope is not None and not entry.scope.matches(scope):
                     continue
                 if entry.value != value:
                     conflicts.append(entry)
@@ -145,6 +156,7 @@ class GovernedMemoryStore:
         source_turn: int | None = None,
         authority: Authority | str | None = None,
         mutability: Mutability | str | None = None,
+        scope: Scope | None = None,
     ) -> Entry:
         with self._lock:
             self._require_registered(agent_id)
@@ -158,11 +170,12 @@ class GovernedMemoryStore:
             if old.mutability == Mutability.LOCKED:
                 raise LockedEntryError(f"Entry {entry_id!r} is locked")
 
+            authority_scope = scope or old.scope
+            self._verify_supersede_scope(old, authority_scope)
             self._check_write_authority(
                 agent_id,
-                kind=None,
+                kind=old.kind,
                 scope=old.scope,
-                skip_kind_check=True,
             )
 
             return self._supersede_locked(
@@ -175,14 +188,26 @@ class GovernedMemoryStore:
                 authority=authority or old.authority,
                 mutability=mutability or old.mutability,
                 scope=old.scope,
+                kind=old.kind,
             )
 
-    def audit_log(self, key: str, *, agent_id: str) -> list[Entry]:
+    def audit_log(
+        self,
+        key: str,
+        *,
+        agent_id: str,
+        scope: Scope | None = None,
+    ) -> list[Entry]:
         with self._lock:
             self._require_registered(agent_id)
             entries = self._backend.get_by_key(key)
             if not entries:
                 return []
+
+            if scope is not None:
+                entries = [e for e in entries if e.scope.matches(scope)]
+                if not entries:
+                    return []
 
             by_id = {entry.id: entry for entry in entries}
             referenced = {entry.superseded_by for entry in entries if entry.superseded_by}
@@ -213,10 +238,9 @@ class GovernedMemoryStore:
         *,
         kind: str | None,
         scope: Scope,
-        skip_kind_check: bool = False,
     ) -> None:
         registration = self._agents[agent_id]
-        if registration.write_kinds and not skip_kind_check:
+        if registration.write_kinds:
             if kind is None or kind not in registration.write_kinds:
                 raise UnauthorizedWriteError(
                     f"Agent {agent_id!r} is not authorized to write kind {kind!r}"
@@ -228,14 +252,25 @@ class GovernedMemoryStore:
                     f"Agent {agent_id!r} is not authorized for scope namespace {namespace!r}"
                 )
 
+    def _verify_supersede_scope(self, old: Entry, scope: Scope) -> None:
+        """Superseder must share every non-None scope field on the old entry."""
+        for field_name in ("user", "task", "session", "namespace"):
+            old_value = getattr(old.scope, field_name)
+            if old_value is None:
+                continue
+            scope_value = getattr(scope, field_name)
+            if scope_value != old_value:
+                raise UnauthorizedWriteError(
+                    f"Supersede scope {field_name}={scope_value!r} does not match "
+                    f"entry scope {field_name}={old_value!r}"
+                )
+
     def _active_entry_for_key(self, key: str, scope: Scope) -> Entry | None:
         for entry in self._backend.get_by_key(key):
             if entry.state != EntryState.ACTIVE:
                 continue
-            if entry.scope.user == scope.user and entry.scope.task == scope.task:
-                if entry.scope.session == scope.session:
-                    if entry.scope.namespace == scope.namespace:
-                        return entry
+            if entry.scope.matches(scope):
+                return entry
         return None
 
     def _supersede_locked(
@@ -250,6 +285,7 @@ class GovernedMemoryStore:
         authority: Authority | str,
         mutability: Mutability | str,
         scope: Scope,
+        kind: str | None = None,
     ) -> Entry:
         new_entry = Entry.create(
             key=old.key,
@@ -262,9 +298,13 @@ class GovernedMemoryStore:
                 provenance_source=f"{reason}: {evidence}",
                 source_turn=source_turn,
             ),
+            kind=kind,
         )
-        old.state = EntryState.SUPERSEDED
-        old.superseded_by = new_entry.id
-        self._backend.save(old)
+        superseded_old = replace(
+            old,
+            state=EntryState.SUPERSEDED,
+            superseded_by=new_entry.id,
+        )
+        self._backend.save(superseded_old)
         self._backend.save(new_entry)
         return new_entry

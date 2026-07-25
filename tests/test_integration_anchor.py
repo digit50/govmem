@@ -49,7 +49,9 @@ def run_multi_agent_scenario() -> dict[str, object]:
     )
 
     planner_context_before = store.read(agent_id="planner", scope=travel_read)
-    conflicts = store.check_conflict("user_location", "Paris", agent_id="researcher")
+    conflicts = store.check_conflict(
+        "user_location", "Paris", agent_id="researcher", scope=travel_read
+    )
     leaked = store.read(agent_id="planner", scope=other_user)
 
     updated = store.supersede(
@@ -60,7 +62,9 @@ def run_multi_agent_scenario() -> dict[str, object]:
         evidence="turn 50: 'I just moved'",
     )
     planner_context_after = store.read(agent_id="planner", scope=travel_read)
-    audit = store.audit_log("user_location", agent_id="researcher")
+    audit = store.audit_log(
+        "user_location", agent_id="researcher", scope=travel_read
+    )
 
     return {
         "planner_context_before_count": len(planner_context_before),
