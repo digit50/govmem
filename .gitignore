@@ -9,3 +9,10 @@ build/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# Internal design notes (local only; not published)
+DECISIONS.md
+
+# Agent / editor workflow (optional local files)
+.cursor/
+AGENTS.md
