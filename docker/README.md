@@ -49,7 +49,7 @@ OLLAMA_MODEL=llama3.2:1b docker compose up --build
 If `ollama pull` returns `EOF` from the container, mount a volume that already contains models:
 
 ```yaml
-# docker-compose.yml — replace ollama_models with an external volume
+# docker-compose.yml — use an external volume that already has models
 volumes:
   - my-ollama-models:/root/.ollama   # external: true under volumes:
 ```
