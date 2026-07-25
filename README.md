@@ -122,4 +122,4 @@ Report: [`examples/prove_the_idea.md`](examples/prove_the_idea.md)
 
 ## Design
 
-See [DECISIONS.md](DECISIONS.md) for framing, trade-offs, and deferred features (SQLite, semantic conflicts, decay policies). See [docs/WRITEUP.md](docs/WRITEUP.md) for the publish writeup.
+See [docs/WRITEUP.md](docs/WRITEUP.md) for framing, trade-offs, and deferred features (SQLite, semantic conflicts, decay policies).
