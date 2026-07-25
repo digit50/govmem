@@ -1,0 +1,36 @@
+# GPU requires Docker context "default" (native engine), not Docker Desktop.
+# Switch: docker context use default
+services:
+  ollama:
+    image: ollama/ollama:latest
+    runtime: nvidia
+    restart: unless-stopped
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ollama_models:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 15s
+
+  demo:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:0.5b}
+    volumes:
+      - ../examples:/app/examples:ro
+      - ../src:/app/src:ro
+
+volumes:
+  ollama_models:
