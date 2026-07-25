@@ -80,20 +80,20 @@ Simulated in-process workflow (no LLM):
 PYTHONPATH=src python examples/multi_agent_demo.py
 ```
 
-**Real multi-agent demo** with Docker + local Ollama LLM (researcher + planner, GPU when available):
+**Real multi-agent LLM demo** (Ollama + GPU when available):
 
 ```bash
 docker context use default   # required — Desktop context has no GPU
-cd examples/docker_multi_agent_demo && docker compose up --build
+cd docker && docker compose up --build
 ```
 
-See [examples/docker_multi_agent_demo/README.md](examples/docker_multi_agent_demo/README.md) for GPU setup, model options, and troubleshooting.
+See [`docker/README.md`](docker/README.md) for GPU setup, model options, and troubleshooting.
 
 **Host run** (Ollama already on localhost):
 
 ```bash
-ollama pull llama3.2:1b
-OLLAMA_HOST=http://127.0.0.1:11434 PYTHONPATH=src python examples/docker_multi_agent_demo/demo.py
+ollama pull qwen2.5:0.5b
+OLLAMA_HOST=http://127.0.0.1:11434 PYTHONPATH=src python examples/llm_multi_agent_demo.py
 ```
 
 ## Tests
@@ -110,7 +110,7 @@ Closest prior art is [MemClaw](https://github.com/caura-ai/caura-memclaw) — th
 
 See [`examples/multi_agent_demo.py`](examples/multi_agent_demo.py) for a simulated multi-agent scenario (no LLM).
 
-See [`examples/docker_multi_agent_demo/`](examples/docker_multi_agent_demo/) for the same scenario with real Ollama LLM agents (Docker or host).
+See [`examples/llm_multi_agent_demo.py`](examples/llm_multi_agent_demo.py) for the same scenario with real Ollama LLM agents (Docker or host).
 
 **Idea validation** — comparative proof that governance prevents four failure modes ():
 
