@@ -566,7 +566,7 @@ class TestThreadSafety:
 
 
 class TestGovernanceBlockers:
-    """Tests for review-panel blocker fixes."""
+    """Tests for governance API hardening."""
 
     def test_returned_entry_mutation_does_not_affect_store(
         self, registered_store: GovernedMemoryStore

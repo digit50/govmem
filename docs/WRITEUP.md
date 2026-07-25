@@ -1,4 +1,4 @@
-# govmem — publish writeup
+# govmem — design notes
 
 ## What it is
 
