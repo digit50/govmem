@@ -1,7 +1,8 @@
 """External anchor: multi-agent integration scenario with hard assertions.
 
-Run standalone:
-    PYTHONPATH=src python -m tests.test_integration_anchor
+Run standalone (after `pip install -e .`):
+
+    python -m tests.test_integration_anchor
 """
 
 from __future__ import annotations

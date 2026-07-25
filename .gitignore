@@ -16,6 +16,9 @@ DECISIONS.md
 # Agent / editor workflow (optional local files)
 .cursor/
 AGENTS.md
+TODO.md
+backlog.md
+log.md
 
 # Secrets and local env
 .env*

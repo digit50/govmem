@@ -2,6 +2,13 @@
 
 Governed shared memory for multi-agent LLM systems. Every entry carries a governance envelope; the store enforces scope, provenance, and supersession on every read and write. Pure data infrastructure — no LLM, no per-turn inference cost.
 
+## Clone
+
+```bash
+git clone https://github.com/digit50/govmem.git
+cd govmem
+```
+
 ## Install (editable)
 
 ```bash
@@ -77,7 +84,7 @@ Agents declare permitted `write_kinds` and scope `namespace` labels. Writes are 
 Simulated in-process workflow (no LLM):
 
 ```bash
-PYTHONPATH=src python examples/multi_agent_demo.py
+python examples/multi_agent_demo.py
 ```
 
 **Real multi-agent LLM demo** (Ollama + GPU when available):
@@ -93,7 +100,7 @@ See [`docker/README.md`](docker/README.md) for GPU setup, model options, and tro
 
 ```bash
 ollama pull qwen2.5:0.5b
-OLLAMA_HOST=http://127.0.0.1:11434 PYTHONPATH=src python examples/llm_multi_agent_demo.py
+OLLAMA_HOST=http://127.0.0.1:11434 python examples/llm_multi_agent_demo.py
 ```
 
 ## Tests

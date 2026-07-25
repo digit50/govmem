@@ -92,6 +92,5 @@ The demo depends on stdlib HTTP only (`urllib`). govmem itself has zero runtime 
 If Ollama is already running on the host:
 
 ```bash
-OLLAMA_HOST=http://localhost:11434 PYTHONPATH=src \
-  python examples/docker_multi_agent_demo/demo.py
+OLLAMA_HOST=http://localhost:11434 python examples/docker_multi_agent_demo/demo.py
 ```

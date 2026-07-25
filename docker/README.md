@@ -73,7 +73,7 @@ Or run everything on host without Docker:
 
 ```bash
 ollama pull llama3.2:1b
-OLLAMA_HOST=http://127.0.0.1:11434 PYTHONPATH=src python examples/llm_multi_agent_demo.py
+OLLAMA_HOST=http://127.0.0.1:11434 python examples/llm_multi_agent_demo.py
 ```
 
 CPU inference is slower but proves the same governance flow.
