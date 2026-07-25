@@ -119,7 +119,7 @@ See [`examples/multi_agent_demo.py`](examples/multi_agent_demo.py) for a simulat
 
 See [`examples/llm_multi_agent_demo.py`](examples/llm_multi_agent_demo.py) for the same scenario with real Ollama LLM agents (Docker or host).
 
-**Idea validation** — comparative proof that governance prevents four failure modes ():
+**Idea validation** — comparative proof that governance prevents four failure modes in multi-agent shared memory:
 
 ```bash
 python examples/prove_the_idea.py   # exits 0 when all four modes proven

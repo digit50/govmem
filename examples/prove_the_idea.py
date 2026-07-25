@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Comparative validation: governed vs ungoverned shared memory.
 
-Demonstrates four failure modes from  that naive shared
+Demonstrates four failure modes that naive shared
 memory exhibits, and that govmem prevents:
 
   1. Unauthorized leakage
@@ -368,7 +368,6 @@ def print_report(results: list[ProofResult]) -> None:
     print("=" * width)
     print("GOVMEM IDEA PROOF — Comparative Validation")
     print("Thesis: governed shared memory prevents four multi-agent failure modes")
-    print("Reference: ")
     print("=" * width)
     print()
 

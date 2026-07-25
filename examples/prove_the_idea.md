@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-25  
 **Script:** `examples/prove_the_idea.py`  
-**Thesis:** Governed shared memory prevents four failure modes in multi-agent LLM systems ([]()).
+**Thesis:** Governed shared memory prevents four failure modes in multi-agent LLM systems.
 
 ## Method
 
@@ -34,7 +34,6 @@ Same scenario run twice for each failure mode:
 ========================================================================
 GOVMEM IDEA PROOF — Comparative Validation
 Thesis: governed shared memory prevents four multi-agent failure modes
-Reference: 
 ========================================================================
 
 ## Unauthorized leakage
