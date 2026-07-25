@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -47,7 +48,7 @@ def ollama_generate(prompt: str, *, system: str | None = None) -> str:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=300) as resp:
             body = json.loads(resp.read().decode())
     except urllib.error.URLError as exc:
         raise RuntimeError(f"Ollama request failed: {exc}") from exc
@@ -71,7 +72,14 @@ def parse_json_from_llm(text: str) -> dict:
     end = cleaned.rfind("}")
     if start == -1 or end == -1:
         raise ValueError(f"No JSON object in LLM output: {text!r}")
-    return json.loads(cleaned[start : end + 1])
+    blob = cleaned[start : end + 1]
+    try:
+        return json.loads(blob)
+    except json.JSONDecodeError:
+        plan_match = re.search(r'"plan"\s*:\s*"((?:[^"\\]|\\.)*)"', blob)
+        if plan_match:
+            return {"plan": json.loads(f'"{plan_match.group(1)}"')}
+        raise
 
 
 def normalize_facts(raw_facts: list) -> list[dict[str, str]]:

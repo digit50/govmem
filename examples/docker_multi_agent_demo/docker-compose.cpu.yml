@@ -1,0 +1,6 @@
+# CPU fallback: use when GPU passthrough fails or is unavailable.
+#   docker compose -f docker-compose.yml -f docker-compose.cpu.yml up --build
+services:
+  ollama:
+    gpus: !reset null
+    deploy: !reset null
