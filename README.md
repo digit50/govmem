@@ -85,6 +85,14 @@ PYTHONPATH=src python examples/multi_agent_demo.py
 python -m pytest tests/ -v
 ```
 
+## Prior art
+
+Closest prior art is [MemClaw](https://github.com/caura-ai/caura-memclaw) — they ship governed memory as a hosted REST service with LLM enrichment on every write; govmem ships it as an in-process Python library with structural enforcement and zero inference cost. Also related: [CMGL](https://github.com/kadubon/certified-memory-governance-layer) (governance layer, not the store), Mem0, Graphiti/Zep.
+
+## Examples
+
+See [`examples/multi_agent_demo.py`](examples/multi_agent_demo.py) for a multi-agent scenario with scope isolation, supersession, and audit trails.
+
 ## Design
 
-See [DECISIONS.md](DECISIONS.md) for framing, trade-offs, and deferred features (SQLite, semantic conflicts, decay policies).
+See [DECISIONS.md](DECISIONS.md) for framing, trade-offs, and deferred features (SQLite, semantic conflicts, decay policies). See [docs/WRITEUP.md](docs/WRITEUP.md) for the publish writeup.
