@@ -5,7 +5,6 @@ Governed shared memory for multi-agent LLM systems. Every entry carries a govern
 ## Install (editable)
 
 ```bash
-cd projects/govmem
 python -m pip install -e ".[dev]"
 ```
 
