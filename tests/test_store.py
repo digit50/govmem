@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 from govmem import (
+    AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
     GovernedMemoryStore,
     LockedEntryError,
@@ -75,7 +76,7 @@ class TestScopeFiltering:
             provenance_source="turn 1",
             kind="fact",
         )
-        assert registered_store.read(agent_id="planner", scope=scope_a)
+        assert len(registered_store.read(agent_id="planner", scope=scope_a)) == 1
         assert registered_store.read(agent_id="planner", scope=scope_b) == []
 
     def test_read_filters_by_task(self, registered_store: GovernedMemoryStore) -> None:
@@ -89,10 +90,12 @@ class TestScopeFiltering:
             provenance_source="turn 2",
             kind="fact",
         )
-        assert registered_store.read(
-            agent_id="planner",
-            scope=Scope(user="user_123", task="travel"),
-        )
+        assert len(
+            registered_store.read(
+                agent_id="planner",
+                scope=Scope(user="user_123", task="travel"),
+            )
+        ) == 1
         assert registered_store.read(
             agent_id="planner",
             scope=Scope(user="user_123", task="shopping"),
@@ -115,10 +118,12 @@ class TestScopeFiltering:
             provenance_source="turn 3",
             kind="fact",
         )
-        assert registered_store.read(
-            agent_id="planner",
-            scope=Scope(user="user_123", task="travel", session="sess_a"),
-        )
+        assert len(
+            registered_store.read(
+                agent_id="planner",
+                scope=Scope(user="user_123", task="travel", session="sess_a"),
+            )
+        ) == 1
         assert registered_store.read(
             agent_id="planner",
             scope=Scope(user="user_123", task="travel", session="sess_b"),
@@ -151,6 +156,20 @@ class TestAgentAuthority:
                 kind="fact",
             )
 
+    def test_missing_namespace_rejected_when_agent_has_scopes(
+        self, registered_store: GovernedMemoryStore
+    ) -> None:
+        with pytest.raises(UnauthorizedWriteError):
+            registered_store.write(
+                agent_id="researcher",
+                key="bad",
+                value="x",
+                scope=Scope(user="u"),
+                authority="user_stated",
+                provenance_source="turn 1",
+                kind="fact",
+            )
+
     def test_missing_kind_rejected_when_restricted(
         self, registered_store: GovernedMemoryStore
     ) -> None:
@@ -176,8 +195,26 @@ class TestAgentAuthority:
         )
         assert entry.value == "v"
 
+    def test_register_agent_rejects_duplicate(self, store: GovernedMemoryStore) -> None:
+        store.register_agent("agent_a")
+        with pytest.raises(AgentAlreadyRegisteredError):
+            store.register_agent("agent_a")
+
 
 class TestConflictDetection:
+    def test_check_conflict_empty_for_missing_key(
+        self, registered_store: GovernedMemoryStore
+    ) -> None:
+        assert registered_store.check_conflict(
+            "missing_key", "x", agent_id="researcher"
+        ) == []
+
+    def test_unregistered_agent_cannot_check_conflict(
+        self, store: GovernedMemoryStore
+    ) -> None:
+        with pytest.raises(AgentNotRegisteredError):
+            store.check_conflict("key", "x", agent_id="unknown")
+
     def test_check_conflict_finds_different_value(
         self, registered_store: GovernedMemoryStore
     ) -> None:
@@ -191,7 +228,9 @@ class TestConflictDetection:
             provenance_source="turn 5",
             kind="fact",
         )
-        conflicts = registered_store.check_conflict("user_location", "Paris")
+        conflicts = registered_store.check_conflict(
+            "user_location", "Paris", agent_id="researcher"
+        )
         assert len(conflicts) == 1
         assert conflicts[0].value == "Berlin"
 
@@ -208,7 +247,9 @@ class TestConflictDetection:
             provenance_source="turn 5",
             kind="fact",
         )
-        assert registered_store.check_conflict("user_location", "Berlin") == []
+        assert registered_store.check_conflict(
+            "user_location", "Berlin", agent_id="researcher"
+        ) == []
 
     def test_superseded_entries_not_conflicts(
         self, registered_store: GovernedMemoryStore
@@ -230,7 +271,9 @@ class TestConflictDetection:
             reason="moved",
             evidence="turn 50",
         )
-        conflicts = registered_store.check_conflict("user_location", "Paris")
+        conflicts = registered_store.check_conflict(
+            "user_location", "Paris", agent_id="researcher"
+        )
         assert len(conflicts) == 1
         assert conflicts[0].value == "Hamburg"
         assert conflicts[0].id != original.id
@@ -318,12 +361,16 @@ class TestAuditLog:
             reason="moved again",
             evidence="turn 60",
         )
-        log = registered_store.audit_log(key="user_location")
+        log = registered_store.audit_log("user_location", agent_id="researcher")
         assert [entry.id for entry in log] == [first.id, second.id, third.id]
         assert all(entry.key == "user_location" for entry in log)
 
     def test_audit_log_empty_for_unknown_key(self, registered_store: GovernedMemoryStore) -> None:
-        assert registered_store.audit_log(key="missing") == []
+        assert registered_store.audit_log("missing", agent_id="researcher") == []
+
+    def test_unregistered_agent_cannot_audit_log(self, store: GovernedMemoryStore) -> None:
+        with pytest.raises(AgentNotRegisteredError):
+            store.audit_log("key", agent_id="unknown")
 
 
 class TestMutability:

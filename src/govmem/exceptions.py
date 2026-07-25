@@ -9,6 +9,10 @@ class AgentNotRegisteredError(GovMemError):
     """Raised when an unregistered agent performs an operation."""
 
 
+class AgentAlreadyRegisteredError(GovMemError):
+    """Raised when register_agent is called for an existing agent_id."""
+
+
 class UnauthorizedWriteError(GovMemError):
     """Raised when an agent lacks authority for a write."""
 

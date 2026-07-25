@@ -33,7 +33,7 @@ entry = store.write(
 )
 
 entries = store.read(agent_id="planner", scope=Scope(user="user_123", task="travel"))
-conflicts = store.check_conflict("user_location", "Paris")
+conflicts = store.check_conflict("user_location", "Paris", agent_id="researcher")
 
 updated = store.supersede(
     entry_id=entry.id,
@@ -43,7 +43,7 @@ updated = store.supersede(
     evidence="turn 50: 'I just moved'",
 )
 
-log = store.audit_log(key="user_location")
+log = store.audit_log("user_location", agent_id="researcher")
 ```
 
 ## Operations

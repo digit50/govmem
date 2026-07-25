@@ -3,7 +3,9 @@
 __version__ = "0.1.0"
 
 from govmem.exceptions import (
+    AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
+    EntryNotFoundError,
     LockedEntryError,
     SupersedeOnlyError,
     UnauthorizedWriteError,
@@ -19,9 +21,11 @@ from govmem.models import (
 from govmem.store import GovernedMemoryStore
 
 __all__ = [
+    "AgentAlreadyRegisteredError",
     "AgentNotRegisteredError",
     "Authority",
     "Entry",
+    "EntryNotFoundError",
     "EntryState",
     "GovernedMemoryStore",
     "LockedEntryError",

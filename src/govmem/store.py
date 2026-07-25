@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from threading import RLock
 from typing import Any
 
 from govmem.backend import InMemoryBackend, MemoryBackend
 from govmem.exceptions import (
+    AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
     EntryNotFoundError,
     LockedEntryError,
@@ -39,6 +40,10 @@ class GovernedMemoryStore:
         scopes: list[str] | None = None,
     ) -> None:
         with self._lock:
+            if agent_id in self._agents:
+                raise AgentAlreadyRegisteredError(
+                    f"Agent {agent_id!r} is already registered"
+                )
             self._agents[agent_id] = AgentRegistration(
                 write_kinds=frozenset(write_kinds or ()),
                 scopes=frozenset(scopes or ()),
@@ -118,8 +123,9 @@ class GovernedMemoryStore:
             results.sort(key=lambda entry: entry.provenance.written_at)
             return results
 
-    def check_conflict(self, key: str, value: Any) -> list[Entry]:
+    def check_conflict(self, key: str, value: Any, *, agent_id: str) -> list[Entry]:
         with self._lock:
+            self._require_registered(agent_id)
             conflicts: list[Entry] = []
             for entry in self._backend.get_by_key(key):
                 if entry.state != EntryState.ACTIVE:
@@ -171,8 +177,9 @@ class GovernedMemoryStore:
                 scope=old.scope,
             )
 
-    def audit_log(self, *, key: str) -> list[Entry]:
+    def audit_log(self, key: str, *, agent_id: str) -> list[Entry]:
         with self._lock:
+            self._require_registered(agent_id)
             entries = self._backend.get_by_key(key)
             if not entries:
                 return []
