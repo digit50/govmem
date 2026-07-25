@@ -1,0 +1,32 @@
+# Multi-agent govmem demo with Ollama (local LLM).
+# Requires Docker with NVIDIA GPU support (see README for CPU fallback).
+# Use the "default" Docker context if GPU passthrough fails on desktop-linux:
+#   docker context use default
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    gpus: all
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 10s
+
+  demo:
+    build: .
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:1b}
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ../../src:/app/govmem_src:ro
+
+volumes:
+  ollama_data:

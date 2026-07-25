@@ -1,0 +1,1 @@
+# Demo uses stdlib urllib only; no runtime deps beyond govmem (mounted from src/).
