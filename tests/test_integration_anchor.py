@@ -1,7 +1,7 @@
 """External anchor: multi-agent integration scenario with hard assertions.
 
 Run standalone:
-    cd projects/govmem && PYTHONPATH=src python -m tests.test_integration_anchor
+    PYTHONPATH=src python -m tests.test_integration_anchor
 """
 
 from __future__ import annotations

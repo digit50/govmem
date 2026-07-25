@@ -83,7 +83,7 @@ PYTHONPATH=src python examples/multi_agent_demo.py
 **Real multi-agent LLM demo** (Ollama + GPU when available):
 
 ```bash
-docker context use default   # required — Desktop context has no GPU
+docker context use default   # required when Docker Desktop context has no GPU
 cd docker && docker compose up --build
 ```
 

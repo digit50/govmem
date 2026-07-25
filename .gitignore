@@ -16,3 +16,7 @@ DECISIONS.md
 # Agent / editor workflow (optional local files)
 .cursor/
 AGENTS.md
+
+# Secrets and local env
+.env*
+*.pem

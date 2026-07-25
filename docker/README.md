@@ -13,12 +13,12 @@ docker context use default
 docker run --rm --runtime=nvidia nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
 ```
 
-Docker Desktop (`desktop-linux` context) does **not** expose GPU on the host — CDI reports "no known GPU vendor". Switch to `default` before running the demo.
+Docker Desktop (`desktop-linux` context) may not expose GPU — CDI can report "no known GPU vendor". Switch to `default` before running the demo.
 
 ## Quick start
 
 ```bash
-cd projects/govmem/docker
+cd docker
 docker compose up --build
 ```
 
@@ -46,7 +46,7 @@ OLLAMA_MODEL=llama3.2:1b docker compose up --build
 
 ### Registry pull failures
 
-If `ollama pull` returns `EOF` from the container (in some environments), mount a volume that already contains models:
+If `ollama pull` returns `EOF` from the container, mount a volume that already contains models:
 
 ```yaml
 # docker-compose.yml — replace ollama_models with an external volume
@@ -72,7 +72,6 @@ OLLAMA_HOST=http://host.docker.internal:11434 docker compose run --no-deps demo
 Or run everything on host without Docker:
 
 ```bash
-cd projects/govmem
 ollama pull llama3.2:1b
 OLLAMA_HOST=http://127.0.0.1:11434 PYTHONPATH=src python examples/llm_multi_agent_demo.py
 ```

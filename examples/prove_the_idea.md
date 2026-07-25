@@ -77,9 +77,8 @@ RESULT: ALL 4 FAILURE MODES PROVEN — ungoverned FAIL, governed PASS
 ## How to reproduce
 
 ```bash
-cd projects/govmem
 python examples/prove_the_idea.py   # exits 0 on success
-pytest                              # 51 library tests
+pytest tests/ -q                    # library tests
 ```
 
 ## Optional LLM layer

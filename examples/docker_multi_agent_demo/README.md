@@ -10,21 +10,21 @@ Two real LLM agents — **researcher** and **planner** — share a `GovernedMemo
 
 ### GPU setup
 
-your machine uses the **default** Docker context for GPU passthrough. If `docker run --gpus all` fails with a CDI error on `desktop-linux`, switch context:
+Use the **default** Docker context for GPU passthrough. If `docker run --gpus all` fails with a CDI error on `desktop-linux`, switch context:
 
 ```bash
 docker context use default
 docker run --rm --gpus all nvidia/cuda:12.0.0-base-ubuntu22.04 nvidia-smi
 ```
 
-`/etc/docker/daemon.json` should include the NVIDIA runtime (already configured).
+`/etc/docker/daemon.json` should include the NVIDIA runtime when using GPU passthrough.
 
 ## Quick start
 
 From this directory:
 
 ```bash
-cd projects/govmem/examples/docker_multi_agent_demo
+cd examples/docker_multi_agent_demo
 docker compose up --build
 ```
 
@@ -92,7 +92,6 @@ The demo depends on stdlib HTTP only (`urllib`). govmem itself has zero runtime 
 If Ollama is already running on the host:
 
 ```bash
-cd projects/govmem
 OLLAMA_HOST=http://localhost:11434 PYTHONPATH=src \
   python examples/docker_multi_agent_demo/demo.py
 ```
